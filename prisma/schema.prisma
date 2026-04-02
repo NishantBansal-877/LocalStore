@@ -1,0 +1,127 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Get a free hosted Postgres database in seconds: `npx create-db`
+
+generator client {
+  provider = "prisma-client"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "mongodb"
+}
+
+enum ROLE {
+  admin
+  user
+}
+
+enum PAYMENT {
+  pending
+  paid
+  failed
+}
+
+enum ORDER {
+ pending
+ cancelled
+ confirmed
+ out_for_delivery
+ delivered
+}
+
+enum OAUTH {
+ google
+ github
+}
+
+
+model Users {
+  userId String @id @map("_id") @default(auto()) @db.ObjectId
+  name String 
+  email String @unique
+  phone String? 
+  password String? 
+  role ROLE 
+  location Json?
+  address String?
+  profilePic String? @map("profile_picture")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @default(now()) @updatedAt @map("updated_at")
+  reviews Reviews[]
+  oauth Oauth[]
+}
+
+model Vendors{
+  vendorId String @id @map("_id") @default(auto()) @db.ObjectId
+  businessName String @map("business_name")
+  category String
+  description String
+  verified Boolean
+  address String
+  products Products[]
+  vendorRating Float @map("vendor_ratings")
+  reviews Reviews[]
+}
+
+model Products{
+  productId String @id @map("_id") @default(auto()) @db.ObjectId
+  vendorId String @db.ObjectId @map("vendor_id")
+  productName String @map("product_name")
+  category String
+  desciption String
+  price Float
+  stock Int
+  images String[]
+  rating Float
+  reviews Reviews[]
+  vendor Vendors @relation(fields: [vendorId],references: [vendorId])
+}
+
+
+model Orders{
+  orderId String @id @map("_id") @default(auto()) @db.ObjectId
+  customerId String @map("customer_id") @db.ObjectId
+  vendorID String @map("vendor_id") @db.ObjectId
+  products Json 
+  totalAmount Float 
+  paymentStatus PAYMENT @map("payment_status")
+  orderStatus  ORDER @map("order_status")
+  deliveryAddress String @map("delivery_address")
+  location Json? 
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @default(now()) @updatedAt @map("updated_at")
+}
+model Reviews{
+  reviewId String @id @map("_id") @default(auto()) @db.ObjectId
+  productId String @db.ObjectId @map("product_id")
+  vendorId String @db.ObjectId @map("vendor_id")
+  customerId String @db.ObjectId @map("customer_id")
+  rating Float
+  comment String
+  product Products @relation(fields: [productId],references: [productId])
+  vendor Vendors @relation(fields: [vendorId],references: [vendorId])
+  user Users @relation(fields: [customerId],references: [userId])
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @default(now()) @updatedAt @map("updated_at")
+}
+
+model Otps{
+  otpId String @id @map("_id") @default(auto()) @db.ObjectId
+  otpCode String @map("otp_code") 
+  email String 
+  createdAt DateTime @default(now()) @map("created_at")
+  expiresAt DateTime
+  @@index([otpCode,email])   
+}
+
+model Oauth{
+  oauthId String @id @map("_id") @default(auto()) @db.ObjectId
+  userId String? @map("user_id") @db.ObjectId 
+  authType OAUTH @map("auth_type")
+  email String 
+  createdAt DateTime @default(now()) 
+  updatedAt DateTime @default(now()) @updatedAt
+  User Users? @relation(fields: [userId],references: [userId])
+}
